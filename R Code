@@ -82,3 +82,15 @@ scale_color_manual(values=c("purple", "darkgreen", "#999999","red", "#56B4E9", "
 scale_x_discrete(limits=c("2013","2014","2015"),labels = wrap_format(10))+
 geom_line(position=pd)+
   scale_y_continuous("Incidence Rate")
+
+#Residuals check
+glm1=glm.nb(Cases~Region+Year+ offset(log(Population)))
+summary(glm1)
+par(mfrow=c(2,2))
+plot(glm1)
+
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = glm1, n = 250)
+plot(simulationOutput$scaledResidualsNormal)
+testUniformity(simulationOutput = simulationOutput)
+plotQQunif(simulationOutput)
