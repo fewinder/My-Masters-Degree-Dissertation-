@@ -32,3 +32,53 @@ library(MASS)
 step <- stepAIC(glmall, direction="both")
 step$anova
 1 - pchisq(summary(glmall)$deviance, summary(glmall)$df.residual) #returns as 0.0000 so binomial model does not fit the data. 
+
+#Binomial Confidence Interval for Year 
+library(binom)
+library(ggplot2)
+library(scales)
+data.year=read.csv("Table_RegionYear_Cases_Population.csv")
+attach(data.year)
+CIexacttrans=binom.confint(Cases, Population, 0.95, method="agresti-coull",plot=TRUE)
+CIexacttrans.tho=data.frame(data.year$Year,data.year$Region, CIexacttrans$x,CIexacttrans$n,(CIexacttrans$mean *100000), (CIexacttrans$lower*100000),(CIexacttrans$upper*100000))
+colnames(CIexacttrans.tho)=c("Year","Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+pd <- position_dodge(width = 0.4)
+theme_set(theme_classic(base_size=22) + theme(legend.position = 'top'))
+CIexacttrans.tho$Year <- factor(CIexacttrans.tho$Year, levels = c("thirteen", "fourteen", "fifteen")) 
+ggplot(CIexacttrans.tho, aes(x = Region, y = Incidence_Rate,col=Year)) +
+  geom_point(size = 4, position=pd) +
+  geom_errorbar(aes(ymax = Upper, ymin = Lower),position=pd)+scale_color_manual(labels = c("2013", "2014","2015"), values = c("#660099", "#D50032", "#008000"))+ 
+scale_x_discrete(limits=c("East of England","North West","Yorkshire and Humber","South East","South West","London","North East","West Midlands","East Midlands"),labels = wrap_format(10))+
+scale_y_continuous("Incidence Rate")
+
+#Exact Binomial Confidence/Credible Interval for Region
+library(binom)
+data.region=read.csv("Table_Region_Cases_Population.csv")
+attach(data.region)
+CIexact=binom.exact(Cases, Population, 0.95, method="agresti-coull",plot=TRUE)
+CIexact.tho=data.frame(data.region$Region, CIexact$x,CIexact$n,(CIexact$mean *100000), (CIexact$lower*100000),(CIexact$upper*100000))
+colnames(CIexact.tho)=c("Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+Method1=c("Confidence","Confidence","Confidence","Confidence","Confidence","Confidence","Confidence","Confidence","Confidence")
+CIexact.tho1=data.frame(Method1,CIexact.tho)
+colnames(CIexact.tho1)=c("Method","Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+#Bayes Binomial Confidence Interval for Region
+data.region=read.csv("Table_Region_Cases_Population.csv")
+attach(data.region)
+CIbayes=binom.bayes(Cases, Population, 0.95,type = "central", 0.5,0.5)
+CIbayes.tho=data.frame(data.region$Region, CIbayes$x,CIexact$n,(CIbayes$mean *100000), (CIbayes$lower*100000),(CIbayes$upper*100000))
+colnames(CIbayes.tho)=c("Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+Method=c("Credible","Credible","Credible","Credible","Credible","Credible","Credible","Credible","Credible")
+CIbayes.tho1=data.frame(Method,CIbayes.tho)
+colnames(CIbayes.tho1)=c("Method","Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+
+#Year,Region Binomial CI 
+CIexacttrans.tho1 <- data.frame(with(CIexacttrans.tho,ifelse(CIexacttrans.tho$Year == "thirteen", "2013" , ifelse(CIexacttrans.tho$Year == "fourteen", "2014", "2015"))), CIexacttrans.tho)
+colnames(CIexacttrans.tho1)=c("Year","Years","Region","Cases", "Population", "Incidence_Rate","Lower", "Upper")
+theme_set(theme_classic(base_size=22) + theme(legend.position = 'top'))
+ggplot(CIexacttrans.tho1, aes(x = Year, y = Incidence_Rate,col=Region, group=Region)) +
+  geom_point(size = 4, position=pd) +
+  geom_errorbar(aes(ymax = Upper, ymin = Lower),position=pd)+
+scale_color_manual(values=c("purple", "darkgreen", "#999999","red", "#56B4E9", "green","black","blue","#E69F00"))+
+scale_x_discrete(limits=c("2013","2014","2015"),labels = wrap_format(10))+
+geom_line(position=pd)+
+  scale_y_continuous("Incidence Rate")
