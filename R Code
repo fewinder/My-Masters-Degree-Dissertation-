@@ -1,0 +1,34 @@
+#READ DATA AND OPEN LIBRARYS
+data.trans=read.csv("transposedRLegionellanowales.csv")
+attach(data.trans)
+head(data.trans,10)
+library(ggplot2)
+library(plotrix)
+library(MASS)
+
+#CREATE INCIDENCE RATE PER 100,000 POPULATION
+proportion=Cases/Population
+proportion.tho=proportion*100000
+
+#MODEL SELECTION
+#Negative-binomial
+glmall.nb=glm.nb(Cases~Region+Year+IMD_Rankscore+Median_Age+offset(log(Population)))
+summary(glmall.nb)
+step2 <- stepAIC(glmall.nb, direction="both")
+step2$anova
+1 - pchisq(summary(glmall.nb)$deviance, summary(glmall.nb)$df.residual) #returns as 0.3177019 so negative binomial model fits the data. 
+
+#Poisson
+glmall.pois=glm(Cases~Region+Year+IMD_Rankscore+Median_Age+offset(log(Population)), family=poisson,data=data.trans)
+summary(glmall.pois)
+step1 <- stepAIC(glmall.pois, direction="both")
+step1$anova
+1 - pchisq(summary(glmall.pois)$deviance, summary(glmall.pois)$df.residual) #returns as zero so poisson model doesn't fit. 
+
+#Binomial
+glmall=glm(proportion~Region+Year+Median_Age+IMD_Rankscore, family=binomial, weights= Population, link)
+summary(glmall)
+library(MASS)
+step <- stepAIC(glmall, direction="both")
+step$anova
+1 - pchisq(summary(glmall)$deviance, summary(glmall)$df.residual) #returns as 0.0000 so binomial model does not fit the data. 
